@@ -16,7 +16,7 @@ This EIP proposes a mechanism to set custom balance thresholds for sweep validat
 
 ## Motivation
 
-The current default sweep threshold for 0x02 validators (2,048 ETH) may not meet the needs of all validators. Some validators may prefer to accumulate rewards before sweeping, while others may want to sweep more frequently. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences. 
+The current default sweep threshold for 0x02 validators (2,048 ETH) may not meet the needs of all validators. Some validators may prefer to accumulate rewards before sweeping, while others may want to sweep more frequently. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
 
 Since the introduction of the 0x02 withdrawal credentials type, we have observed a very low rate of validators transitioning to 0x02. One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a good way to manually withdraw parts of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals use the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on the network conditions. This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
 
@@ -37,7 +37,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 | `SET_SWEEP_THRESHOLD_REQUEST_COUNT_STORAGE_SLOT` | `1` | |
 | `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_HEAD_STORAGE_SLOT` | `2` | Pointer to the head of the set sweep threshold request message queue |
 | `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT` | `3` | Pointer to the tail of the set sweep threshold request message queue |
-| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET` | `4` | The start memory slot of the in-state set sweep threshold request message queue |
+| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET` | `4` | The start storage slot of the in-state set sweep threshold request message queue |
 | `MAX_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `2` | Maximum number of set sweep threshold requests that can be dequeued into a block |
 | `TARGET_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `1` | |
 | `MIN_SET_SWEEP_THRESHOLD_REQUEST_FEE` | `1` | |
@@ -75,39 +75,39 @@ request_data = read_set_sweep_threshold_requests()
 #### Set sweep threshold request contract
 The contract has three different code paths, which can be summarized at a high level as follows:
 
-1. Add set sweep threshold request - requires a `70` byte input, concatenated source address, validator public key, and threshold.
+1. Add set sweep threshold request - requires a 56-byte input: validator public key concatenated with a big-endian `uint64` threshold value.
 2. Fee getter - if the input length is zero, return the current fee required to add a set sweep threshold request.
-3. System process - if called by system address, pop off the set sweep threshold requests for the current block from the queue.
+3. System process - if called by the system address, pop off the set sweep threshold requests for the current block from the queue.
 
 ##### Add Set Sweep Threshold Request
 
-If call data input to the contract is exactly `70` bytes, perform the following:
+If call data input to the contract is exactly `56` bytes, perform the following:
 1. Ensure enough ETH was sent to cover the current set sweep threshold request fee (`msg.value >= get_fee()`)
-2. Increase set sweep threshold request count by `1` for the current block (`increment_count()`)
-3. Insert a set sweep threshold request into the queue for the source address, validator public key, and threshold (`insert_set_sweep_threshold_request_into_queue()`)
+2. Increase set sweep threshold request count by 1 for the current block
+3. Insert a set sweep threshold request into the queue for the source address, validator public key, and the threshold
 
 Specifically, the functionality is defined in pseudocode as the function `add_set_sweep_threshold_request()`:
 
 ```python
-def add_set_sweep_threshold_request(Bytes48: validator_pubkey, uint64: threshold):
+def add_set_sweep_threshold_request(validator_pubkey: Bytes48, threshold: uint64):
     """
-    Add set sweep threshold request adds new request to the set sweep threshold request queue, so long as a sufficient fee is provided.
+    Add a new request to the set sweep threshold request queue, provided a sufficient value to cover the fee was sent.
     """
 
-    # Verify sufficient fee was provided.
+    # Verify sufficient value was provided.
     fee = get_fee()
     require(msg.value >= fee, 'Insufficient value for fee')
 
-    # Increment withdrawal request count.
+    # Increment the request count.
     count = sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, SET_SWEEP_THRESHOLD_REQUEST_COUNT_STORAGE_SLOT)
     sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, SET_SWEEP_THRESHOLD_REQUEST_COUNT_STORAGE_SLOT, count + 1)
 
-    # Insert into queue.
+    # Insert into the queue.
     queue_tail_index = sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT)
     queue_storage_slot = SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET + queue_tail_index * 3
     sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot, msg.sender)
-    sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 1, validator_pubkey[0:32])
-    sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2, validator_pubkey[32:48] ++ uint64_to_little_endian(threshold))
+    sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 1, validator_pubkey[ 0:32])
+    sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2, validator_pubkey[32:48] ++ threshold)
     sstore(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT, queue_tail_index + 1)
 ```
 
@@ -138,7 +138,7 @@ def fake_exponential(factor: int, numerator: int, denominator: int) -> int:
 
 ##### Fee Getter
 
-When the input to the contract is length zero, interpret this as a get request for the current fee, i.e. the contract returns the result of `get_fee()`.
+When the input to the contract has zero-length, interpret this as a get request for the current fee, i.e. the contract returns the result of `get_fee()`. The contract reverts if any value is sent to prevent loss of funds.
 
 ##### System Call
 
@@ -151,7 +151,7 @@ Each set sweep threshold request must appear in the EIP-7685 requests list in th
 
 Additionally, the system call and the processing of that block must conform to the following:
 
-* The call has a dedicated gas limit of `30_000_000`.
+* The call has a dedicated gas limit of `30_000_000` (`SYSTEM_TRANSACTION_GAS`) and is not subject to the transaction limit cap introduced in [EIP-7825](./eip-7825.md).
 * Gas consumed by this call does not count against the block’s overall gas usage.
 * Both the gas limit assigned to the call and the gas consumed are excluded from any checks against the block’s gas limit.
 * The call does not follow [EIP-1559](./eip-1559.md) fee burn semantics — no value should be transferred as part of this call.
@@ -175,12 +175,6 @@ def read_set_sweep_threshold_requests():
 # Helpers #
 ###########
 
-def little_endian_to_uint64(data: bytes) -> uint64:
-    return uint64(int.from_bytes(data, 'little'))
-
-def uint64_to_little_endian(num: uint64) -> bytes:
-    return num.to_bytes(8, 'little')
-
 class ValidatorSetSweepThresholdRequest(object):
     source_address: Bytes20
     validator_pubkey: Bytes48
@@ -197,9 +191,10 @@ def dequeue_set_sweep_threshold_requests():
         queue_storage_slot = SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET + (queue_head_index + i) * 3
         source_address = address(sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot)[0:20])
         validator_pubkey = (
-            sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 1)[0:32] + sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2)[0:16]
+            sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 1)[0:32] +
+            sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2)[0:16]
         )
-        threshold = little_endian_to_uint64(sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2)[16:24])
+        threshold = sload(SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS, queue_storage_slot + 2)[16:24]
         req = ValidatorSetSweepThresholdRequest(
             source_address=Bytes20(source_address),
             validator_pubkey=Bytes48(validator_pubkey),
@@ -236,7 +231,335 @@ def reset_set_sweep_threshold_requests_count():
 ##### Bytecode
 
 ```asm
-TBD
+caller
+push20 0xfffffffffffffffffffffffffffffffffffffffe
+eq
+push1 0xcb
+jumpi
+
+push1 0x11
+push0
+sload
+dup1
+push32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+eq
+push2 0x01f4
+jumpi
+
+push1 0x01
+dup3
+mul
+push1 0x01
+swap1
+push0
+
+jumpdest
+push0
+dup3
+gt
+iszero
+push1 0x68
+jumpi
+
+dup2
+add
+swap1
+dup4
+mul
+dup5
+dup4
+mul
+swap1
+div
+swap2
+push1 0x01
+add
+swap2
+swap1
+push1 0x4d
+jump
+
+jumpdest
+swap1
+swap4
+swap1
+div
+swap3
+pop
+pop
+pop
+calldatasize
+push1 0x38
+eq
+push1 0x88
+jumpi
+
+calldatasize
+push2 0x01f4
+jumpi
+
+callvalue
+push2 0x01f4
+jumpi
+
+push0
+mstore
+push1 0x20
+push0
+return
+
+jumpdest
+callvalue
+lt
+push2 0x01f4
+jumpi
+
+push1 0x01
+sload
+push1 0x01
+add
+push1 0x01
+sstore
+push1 0x03
+sload
+dup1
+push1 0x03
+mul
+push1 0x04
+add
+caller
+dup2
+sstore
+push1 0x01
+add
+push0
+calldataload
+dup2
+sstore
+push1 0x01
+add
+push1 0x20
+calldataload
+swap1
+sstore
+caller
+push1 0x60
+shl
+push0
+mstore
+push1 0x38
+push0
+push1 0x14
+calldatacopy
+push1 0x4c
+push0
+log0
+push1 0x01
+add
+push1 0x03
+sstore
+stop
+
+jumpdest
+push1 0x03
+sload
+push1 0x02
+sload
+dup1
+dup3
+sub
+dup1
+push1 0x02
+gt
+push1 0xdf
+jumpi
+
+pop
+push1 0x02
+
+jumpdest
+push0
+
+jumpdest
+dup2
+dup2
+eq
+push2 0x0183
+jumpi
+
+dup3
+dup2
+add
+push1 0x03
+mul
+push1 0x04
+add
+dup2
+push1 0x4c
+mul
+dup2
+sload
+push1 0x60
+shl
+dup2
+mstore
+push1 0x14
+add
+dup2
+push1 0x01
+add
+sload
+dup2
+mstore
+push1 0x20
+add
+swap1
+push1 0x02
+add
+sload
+dup1
+push32 0xffffffffffffffffffffffffffffffff00000000000000000000000000000000
+and
+dup3
+mstore
+swap1
+push1 0x10
+add
+swap1
+push1 0x40
+shr
+swap1
+dup2
+push1 0x38
+shr
+dup2
+push1 0x07
+add
+mstore8
+dup2
+push1 0x30
+shr
+dup2
+push1 0x06
+add
+mstore8
+dup2
+push1 0x28
+shr
+dup2
+push1 0x05
+add
+mstore8
+dup2
+push1 0x20
+shr
+dup2
+push1 0x04
+add
+mstore8
+dup2
+push1 0x18
+shr
+dup2
+push1 0x03
+add
+mstore8
+dup2
+push1 0x10
+shr
+dup2
+push1 0x02
+add
+mstore8
+dup2
+push1 0x08
+shr
+dup2
+push1 0x01
+add
+mstore8
+mstore8
+push1 0x01
+add
+push1 0xe1
+jump
+
+jumpdest
+swap2
+add
+dup1
+swap3
+eq
+push2 0x0195
+jumpi
+
+swap1
+push1 0x02
+sstore
+push2 0x01a0
+jump
+
+jumpdest
+swap1
+pop
+push0
+push1 0x02
+sstore
+push0
+push1 0x03
+sstore
+
+jumpdest
+push0
+sload
+dup1
+push32 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+eq
+iszero
+push2 0x01cd
+jumpi
+
+pop
+push0
+
+jumpdest
+push1 0x01
+sload
+push1 0x01
+dup3
+dup3
+add
+gt
+push2 0x01e2
+jumpi
+
+pop
+pop
+push0
+push2 0x01e8
+jump
+
+jumpdest
+add
+push1 0x01
+swap1
+sub
+
+jumpdest
+push0
+sstore
+push0
+push1 0x01
+sstore
+push1 0x4c
+mul
+push0
+return
+
+jumpdest
+push0
+push0
+revert
 ```
 
 ##### Deployment
