@@ -232,6 +232,8 @@ def reset_set_sweep_threshold_requests_count():
 
 ##### Bytecode
 
+The following bytecode is produced by the [geas](https://github.com/fjl/geas) compiler from the source code in the [sys-asm](https://github.com/ethereum/sys-asm) repository.
+
 ```asm
 caller
 push20 0xfffffffffffffffffffffffffffffffffffffffe
