@@ -148,7 +148,7 @@ At the end of processing any execution block starting from the `FORK_BLOCK` (i.e
 * The contract's excess set sweep threshold requests are updated based on usage in the current block (`update_excess_set_sweep_threshold_requests()`)
 * The contract's set sweep threshold requests count is reset to 0 (`reset_set_sweep_threshold_requests_count()`)
 
-In response to the system call, the contract returns an opaque byte array of concatenated SSZ-serialized dequeued requests.
+In response to the system call, the contract returns an opaque byte array of concatenated SSZ-serialized dequeued requests. There's no specific reasoning behind it, except aligning with the existing behaviour of the similar EIP, see [EIP-7002](./eip-7002.md), and possible simplification of the processing flow for client teams.
 Each set sweep threshold request must appear in the EIP-7685 requests list in the exact order returned by `dequeue_set_sweep_threshold_requests()`.
 
 Additionally, the system call and the processing of that block must conform to the following:
