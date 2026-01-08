@@ -38,8 +38,8 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 | `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_HEAD_STORAGE_SLOT` | `2` | Pointer to the head of the set sweep threshold request message queue |
 | `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT` | `3` | Pointer to the tail of the set sweep threshold request message queue |
 | `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET` | `4` | The start storage slot of the in-state set sweep threshold request message queue |
-| `MAX_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `2` | Maximum number of set sweep threshold requests that can be dequeued into a block |
-| `TARGET_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `1` | |
+| `MAX_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `16` | Maximum number of set sweep threshold requests that can be dequeued into a block |
+| `TARGET_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `2` | |
 | `MIN_SET_SWEEP_THRESHOLD_REQUEST_FEE` | `1` | |
 | `SET_SWEEP_THRESHOLD_REQUEST_FEE_UPDATE_FRACTION` | `17` | |
 | `EXCESS_INHIBITOR` | `2**256-1` | Excess value used to compute the fee before the first system call |
