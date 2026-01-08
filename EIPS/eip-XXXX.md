@@ -142,7 +142,7 @@ When the input to the contract has zero-length, interpret this as a get request 
 
 ##### System Call
 
-At the end of processing any execution block starting from the `FORK_BLOCK` (i.e. after processing all transactions and after performing the block body set sweep threshold requests validations), call `SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS` as `SYSTEM_ADDRESS` with no calldata. The invocation triggers the following:
+At the end of processing any execution block starting from the `FORK_BLOCK` (i.e. after processing all transactions), call `SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS` as `SYSTEM_ADDRESS` with no calldata. The invocation triggers the following:
 
 * The contract's queue is updated based on set sweep threshold requests dequeued and the set sweep threshold requests queue head/tail are reset if the queue has been cleared (`dequeue_set_sweep_threshold_requests()`)
 * The contract's excess set sweep threshold requests are updated based on usage in the current block (`update_excess_set_sweep_threshold_requests()`)
