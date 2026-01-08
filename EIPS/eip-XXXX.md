@@ -598,13 +598,13 @@ Full consensus layer specification can be found in https://github.com/dgusakov/c
 ## Rationale
 
 ### Overview
-Most of the considerations regarding the messaging format, queue, and rate-limiting are similar to those discussed in [EIP-7002](./eip-7002.md) for partial withdrawal requests, and so we refer the reader to that EIP for more details.
+Most of the considerations regarding the messaging format, queue, and rate-limiting are similar to those discussed in [EIP-7002](./eip-7002.md) for withdrawal requests, and so we refer the reader to that EIP for more details.
 
 ### Custom Sweep Thresholds
 The primary motivation for this EIP is to allow validators to set custom sweep thresholds for their withdrawals when using compounding withdrawal credentials (`0x02, 0x03`). This feature provides greater flexibility and control over how and when validators can access their staking rewards.
 
 ### `validator_sweep_thresholds` mapping in `BeaconState`
-To store the custom sweep thresholds for each validator, we introduce a new mapping in the `BeaconState` container called `validator_sweep_thresholds`. This mapping associates each validator index with its corresponding sweep threshold. This approach was chosen instead of adding a new field to the `Validator` container to avoid modification of the `Validator` container, which had not been changed since phase-0. Modification of the `Validator` container would have required more extensive changes to the consensus layer and potentially affected existing implementations of the applications using this container.
+To store the custom sweep thresholds for each validator, we introduce a new mapping in the `BeaconState` container called `validator_sweep_thresholds`. This mapping associates each validator index with its corresponding sweep threshold. This approach was chosen instead of adding a new field to the `Validator` container to avoid modification of this type, which had not been changed since phase-0. Modification of the `Validator` container would have required more extensive changes to the consensus layer and potentially affected existing implementations of the applications using this container.
 
 ### Immediate requests processing instead of queuing on consensus layer
 Unlike partial withdrawal requests, which are queued on the consensus layer, set sweep threshold requests are processed immediately upon being dequeued from the execution layer contract. This design choice simplifies the implementation and reduces the complexity of managing a separate queue on the consensus layer.
@@ -614,11 +614,11 @@ This design decision is made to prevent usage of the custom sweep threshold mech
 
 ## Backwards Compatibility
 
-This EIP introduces backwards incompatible changes to the block structure and block validation rule set. But neither of these changes break anything related to current user activity and experience.
+This EIP introduces backwards incompatible changes to the block structure and block validation rule set. But neither of these changes break anything related to the current user activity and experience.
 
 ## Security Considerations
 
-Most of the security considerations regarding fee overpayment, system call failure, and empty code failure are similar to those discussed in [EIP-7002](./eip-7002.md) for partial withdrawal requests, and so we refer the reader to that EIP for more details.
+Most of the security considerations regarding fee overpayment, system call failure, and empty code failure are similar to those discussed in [EIP-7002](./eip-7002.md) for withdrawal requests, and so we refer the reader to that EIP for more details.
 
 ## Copyright
 
