@@ -147,6 +147,8 @@ At the end of processing any execution block starting from the `FORK_BLOCK` (i.e
 * The contract's queue is updated based on set sweep threshold requests dequeued and the set sweep threshold requests queue head/tail are reset if the queue has been cleared (`dequeue_set_sweep_threshold_requests()`)
 * The contract's excess set sweep threshold requests are updated based on usage in the current block (`update_excess_set_sweep_threshold_requests()`)
 * The contract's set sweep threshold requests count is reset to 0 (`reset_set_sweep_threshold_requests_count()`)
+
+In response to the system call, the contract returns an opaque byte array of concatenated SSZ-serialized dequeued requests.
 Each set sweep threshold request must appear in the EIP-7685 requests list in the exact order returned by `dequeue_set_sweep_threshold_requests()`.
 
 Additionally, the system call and the processing of that block must conform to the following:
@@ -169,13 +171,13 @@ def read_set_sweep_threshold_requests():
     reqs = dequeue_set_sweep_threshold_requests()
     update_excess_set_sweep_threshold_requests()
     reset_set_sweep_threshold_requests_count()
-    return ssz.serialize(reqs)
+    return b"".join(ssz.serialize(r) for r in reqs)
 
 ###########
 # Helpers #
 ###########
 
-class ValidatorSetSweepThresholdRequest(object):
+class ValidatorSetSweepThresholdRequest(Container):
     source_address: Bytes20
     validator_pubkey: Bytes48
     threshold: uint64
