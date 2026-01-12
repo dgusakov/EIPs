@@ -1,6 +1,6 @@
 ---
-title: Custom sweep threshold for 0x02 validators
-description: Allow setting custom balance thresholds for sweep validator withdrawals for 0x02 validators.
+title: Custom sweep threshold for for validators using compounding withdrawal credentials (`0x02, 0x03`)
+description: Allow setting custom balance thresholds for sweep validator withdrawals for validators using compounding withdrawal credentials (`0x02, 0x03`).
 author: Dmitry Gusakov (@dgusakov), Dmitry Chernukhin (@madlabman) and Greg Koumoutsos (@gkoumout)
 discussions-to: <URL>
 status: Draft
@@ -12,13 +12,13 @@ requires: 7251, 7685
 
 ## Abstract
 
-This EIP proposes a mechanism to set custom balance thresholds for sweep validator withdrawals for 0x02 validators. This allows validators to specify when they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
+This EIP proposes a mechanism to set custom balance thresholds for sweep validator withdrawals for validators using compounding withdrawal credentials (`0x02, 0x03`). This allows validators to specify when they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
 
 ## Motivation
 
-The current default sweep threshold for 0x02 validators (2,048 ETH) may not meet the needs of all validators. Some validators may prefer to accumulate rewards before sweeping, while others may want to sweep more frequently. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
+The current default sweep threshold (2,048 ETH) for validators using compounding withdrawal credentials (`0x02, 0x03`) may not meet the needs of all validators. Some validators may prefer to accumulate rewards before sweeping, while others may want to sweep more frequently. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
 
-Since the introduction of the 0x02 withdrawal credentials type, we have observed a very low rate of validators transitioning to 0x02. One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a good way to manually withdraw parts of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals use the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on the network conditions. This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
+Since the introduction of the `0x02` withdrawal credentials type, we have observed a very low rate of validators transitioning to `0x02` . One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a good way to manually withdraw parts of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals use the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on the network conditions. This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
 
 ## Specification
 
