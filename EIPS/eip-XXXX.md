@@ -12,13 +12,13 @@ requires: 7251, 7685
 
 ## Abstract
 
-This EIP proposes a mechanism to set custom balance thresholds for sweep validator withdrawals for validators using compounding withdrawal credentials (`0x02, 0x03`). This allows validators to specify when they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
+This EIP proposes a mechanism to set custom balance thresholds for sweep withdrawals for compounding withdrawal credentials (`0x02, 0x03`) validators. This mechanism allows validators to specify above which balance they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
 
 ## Motivation
 
-The current default sweep threshold (2,048 ETH) for validators using compounding withdrawal credentials (`0x02, 0x03`) may not meet the needs of all validators. Some validators may prefer to accumulate rewards before sweeping, while others may want to sweep more frequently. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
+The current default sweep threshold (2,048 ETH) for validators using compounding withdrawal credentials (`0x02, 0x03`) may not meet the needs of all validators. Some validators may prefer to accumulate rewards on the validator balance, while others may want to sweep before reaching the current threshold of 2,048 ETH. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
 
-Since the introduction of the `0x02` withdrawal credentials type, we have observed a very low rate of validators transitioning to `0x02` . One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a good way to manually withdraw parts of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals use the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on the network conditions. This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
+Since the introduction of the `0x02` compounding withdrawal credentials type, we have observed a very low rate of validators transitioning to `0x02`. One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a viable method for manually withdrawing portions of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals utilize the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on network conditions (see the recent spike in exit queue size in October 2025). This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
 
 ## Specification
 
@@ -82,9 +82,9 @@ The contract has three different code paths, which can be summarized at a high l
 ##### Add Set Sweep Threshold Request
 
 If call data input to the contract is exactly `56` bytes, perform the following:
-1. Ensure enough ETH was sent to cover the current set sweep threshold request fee (`msg.value >= get_fee()`)
-2. Increase set sweep threshold request count by 1 for the current block
-3. Insert a set sweep threshold request into the queue for the source address, validator public key, and the threshold
+1. Ensure enough ETH was sent to cover the current set sweep threshold request fee (`msg.value >= get_fee()`).
+2. Increase set sweep threshold request count by 1 for the current block.
+3. Insert a set sweep threshold request into the queue for the source address, validator public key, and the threshold.
 
 Specifically, the functionality is defined in pseudocode as the function `add_set_sweep_threshold_request()`:
 
@@ -581,6 +581,8 @@ Address: TBD
 
 ### Consensus layer
 
+[Full specification](https://github.com/dgusakov/consensus-specs/pull/1) TBD: Update link when PR to consensus-specs is created.
+
 The defining feature of this EIP is ***allowing validators to set custom sweep thresholds for their withdrawals when using compounding withdrawal credentials (`0x02, 0x03`)***.
 
 The [Rationale](#rationale) section contains an explanation for this proposed core feature. A sketch of the resulting changes to the consensus layer is included below.
@@ -593,7 +595,6 @@ The [Rationale](#rationale) section contains an explanation for this proposed co
 6. Modify the `get_expected_withdrawals` function to use the custom sweep threshold when determining partial withdrawals.
 7. Add `process_set_sweep_threshold_request` function to handle the processing of set sweep threshold requests from the execution layer.
 8. Modify the `process_execution_payload` function to include the processing of set sweep threshold requests.
-Full consensus layer specification can be found in https://github.com/dgusakov/consensus-specs/pull/1
 
 ## Rationale
 
