@@ -12,13 +12,15 @@ requires: 7251, 7685
 
 ## Abstract
 
-This EIP proposes a mechanism to set custom balance thresholds for sweep withdrawals for compounding withdrawal credentials (`0x02, 0x03`) validators. This mechanism allows validators to specify above which balance they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
+This EIP proposes an optional mechanism to set custom balance thresholds for sweep withdrawals for compounding withdrawal credentials (`0x02, 0x03`) validators. This mechanism allows validators to specify above which balance they want their rewards to be swept to their withdrawal address, providing greater flexibility and control over their staking rewards.
 
 ## Motivation
 
-The current default sweep threshold (2,048 ETH) for validators using compounding withdrawal credentials (`0x02, 0x03`) may not meet the needs of all validators. Some validators may prefer to accumulate rewards on the validator balance, while others may want to sweep before reaching the current threshold of 2,048 ETH. By allowing custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
+The current default sweep threshold (2,048 ETH) for validators using compounding withdrawal credentials (`0x02, 0x03`) may not meet the needs of all validators. Some validators may prefer to accumulate rewards on the validator balance, while others may want to sweep before reaching the current threshold of 2,048 ETH. By allowing optional custom sweep thresholds, validators can optimize their reward management according to their individual strategies and preferences.
 
 Since the introduction of the `0x02` compounding withdrawal credentials type, we have observed a very low rate of validators transitioning to `0x02`. One reason is that many validators do not want to wait until they accumulate 2048 ETH in rewards before being able to participate in the automatic sweep of withdrawals. While partial withdrawals were considered a viable method for manually withdrawing portions of the validator balance, this approach was not widely adopted by staking protocols, node operators, and solo stakers for several reasons. First, it requires a user-initiated transaction to perform a withdrawal. Second, partial withdrawals utilize the general exit queue, which makes the time between partial withdrawal initiation and fulfillment unpredictable and heavily dependent on network conditions (see the recent spike in exit queue size in October 2025). This EIP aims to address this issue by allowing validators to set a custom threshold for sweep withdrawals.
+
+The proposed mechanism is completely optional and does not change anything in the default registration / withdrawal / exit process for validators. It's just an additional feature that could be ignored if not interesting, but provides a useful feature for many validators incentivizing switching to compounding validators.
 
 ## Specification
 
@@ -30,7 +32,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 | Name | Value | Comment |
 | - | - | - |
-| `SET_SWEEP_THRESHOLD_REQUEST_TYPE` | `0x04` | The [EIP-7685](./eip-7685.md) type prefix for set sweep threshold request |
+| `SET_SWEEP_THRESHOLD_REQUEST_TYPE` | `0x03` | The [EIP-7685](./eip-7685.md) type prefix for set sweep threshold request |
 | `SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS` | `TBD` | Where to call and store relevant details about set sweep threshold request mechanism |
 | `SYSTEM_ADDRESS` | `0xfffffffffffffffffffffffffffffffffffffffe` | Address used to invoke system operation on contract |
 | `EXCESS_SET_SWEEP_THRESHOLD_REQUESTS_STORAGE_SLOT` | `0` | |
@@ -58,7 +60,7 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 #### Set sweep threshold request
 
-The new set sweep threshold request is an [EIP-7685](./eip-7685.md) request with type `0x04` consisting of the following fields:
+The new set sweep threshold request is an [EIP-7685](./eip-7685.md) request with type `SET_SWEEP_THRESHOLD_REQUEST_TYPE` consisting of the following fields:
 
 1. `source_address`: `Bytes20`
 2. `validator_pubkey`: `Bytes48`
@@ -588,13 +590,15 @@ The defining feature of this EIP is ***allowing validators to set custom sweep t
 The [Rationale](#rationale) section contains an explanation for this proposed core feature. A sketch of the resulting changes to the consensus layer is included below.
 
 1. Update the `BeaconState` container to include a `validator_sweep_thresholds` mapping.
-2. Update the `ExecutionRequests` container to include a list of `SetSweepThresholdRequest`s.
-3. Add `SetSweepThresholdRequest` container to represent the set sweep threshold requests dequeued from the execution layer contract.
-4. Modify the `is_partially_withdrawable_validator` predicate to take into account the custom sweep threshold.
-5. Add `get_effective_sweep_threshold` helper function to compute the effective sweep threshold for a validator.
-6. Modify the `get_expected_withdrawals` function to use the custom sweep threshold when determining partial withdrawals.
-7. Add `process_set_sweep_threshold_request` function to handle the processing of set sweep threshold requests from the execution layer.
-8. Modify the `process_execution_payload` function to include the processing of set sweep threshold requests.
+2. Add `SetSweepThresholdRequest` container to represent the set sweep threshold requests dequeued from the execution layer contract.
+3. Update the `ExecutionRequests` container to include a list of `SetSweepThresholdRequest` items.
+4. Add `process_set_sweep_threshold_request` function to handle the processing of set sweep threshold requests from the execution layer.
+5. Modify the `process_execution_payload` function to include the processing of set sweep threshold requests.
+6. Modify the `is_partially_withdrawable_validator` predicate to take into account the custom sweep threshold.
+7. Add `get_effective_sweep_threshold` helper function to compute the effective sweep threshold for a validator.
+8. Modify the `get_expected_withdrawals` function to use the custom sweep threshold when determining partial withdrawals.
+
+By default, all validators will have their sweep thresholds set to the current default of 2,048 ETH (current `MAX_EFFECTIVE_BALANCE`), both for existing validators and new ones. Validators can choose to set a custom threshold above their current balance by submitting a set sweep threshold request through the execution layer contract.
 
 ## Rationale
 
@@ -605,13 +609,13 @@ Most of the considerations regarding the messaging format, queue, and rate-limit
 The primary motivation for this EIP is to allow validators to set custom sweep thresholds for their withdrawals when using compounding withdrawal credentials (`0x02, 0x03`). This feature provides greater flexibility and control over how and when validators can access their staking rewards.
 
 ### `validator_sweep_thresholds` mapping in `BeaconState`
-To store the custom sweep thresholds for each validator, we introduce a new mapping in the `BeaconState` container called `validator_sweep_thresholds`. This mapping associates each validator index with its corresponding sweep threshold. This approach was chosen instead of adding a new field to the `Validator` container to avoid modification of this type, which had not been changed since phase-0. Modification of the `Validator` container would have required more extensive changes to the consensus layer and potentially affected existing implementations of the applications using this container.
-
-### Immediate requests processing instead of queuing on consensus layer
-Unlike partial withdrawal requests, which are queued on the consensus layer, set sweep threshold requests are processed immediately upon being dequeued from the execution layer contract. This design choice simplifies the implementation and reduces the complexity of managing a separate queue on the consensus layer.
+To store the custom sweep thresholds for each validator, we introduce a new mapping in the `BeaconState` container called `validator_sweep_thresholds`. This mapping associates each validator index with its corresponding sweep threshold. This approach was chosen instead of adding a new field to the `Validator` container to avoid modification of this type, which had not been changed since phase-0. Modification of the `Validator` container would have required more extensive changes to the consensus layer and potentially affected existing implementations of the applications using this container. Also, this is the standard way of adding info about validators into the state (e.g., validator balance is stored in `balances` field of `BeaconState` and several other PoS-related info have their own lists where each item corresponds to validators' data)
 
 ### Only allowing threshold to be set above current balance
 This design decision is made to prevent usage of the custom sweep threshold mechanism to trigger immediate withdrawals. By enforcing that the threshold must be set above the current balance, we ensure that validators cannot use this feature to bypass the standard withdrawal process. Should a validator wish to set sweep threshold below current balance, they can first withdraw down to the desired level using partial withdrawals, and then set the sweep threshold accordingly.
+
+### Immediate requests processing instead of queuing on consensus layer
+Unlike partial withdrawal requests, which are queued on the consensus layer, set sweep threshold requests are processed immediately upon being dequeued from the execution layer contract. This design choice simplifies the implementation and reduces the complexity of managing a separate queue on the consensus layer.
 
 ## Backwards Compatibility
 
