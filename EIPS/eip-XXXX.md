@@ -598,7 +598,7 @@ The [Rationale](#rationale) section contains an explanation for this proposed co
 7. Add `get_effective_sweep_threshold` helper function to compute the effective sweep threshold for a validator.
 8. Modify the `get_expected_withdrawals` function to use the custom sweep threshold when determining partial withdrawals.
 
-By default, all validators will have their sweep thresholds set to the current default of 2,048 ETH (current `MAX_EFFECTIVE_BALANCE`), both for existing validators and new ones. Validators can choose to set a custom threshold above their current balance by submitting a set sweep threshold request through the execution layer contract.
+By default, all validators will have their sweep thresholds set to the current default `MAX_EFFECTIVE_BALANCE`, both for existing validators and new ones. Validators can choose to set a custom threshold above their current balance by submitting a set sweep threshold request through the execution layer contract.
 
 ## Rationale
 
