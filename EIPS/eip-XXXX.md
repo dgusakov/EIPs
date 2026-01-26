@@ -30,27 +30,28 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 #### Execution layer
 
-| Name | Value | Comment |
-| - | - | - |
-| `SET_SWEEP_THRESHOLD_REQUEST_TYPE` | `0x03` | The [EIP-7685](./eip-7685.md) type prefix for set sweep threshold request |
-| `SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS` | `TBD` | Where to call and store relevant details about set sweep threshold request mechanism |
-| `SYSTEM_ADDRESS` | `0xfffffffffffffffffffffffffffffffffffffffe` | Address used to invoke system operation on contract |
-| `EXCESS_SET_SWEEP_THRESHOLD_REQUESTS_STORAGE_SLOT` | `0` | |
-| `SET_SWEEP_THRESHOLD_REQUEST_COUNT_STORAGE_SLOT` | `1` | |
-| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_HEAD_STORAGE_SLOT` | `2` | Pointer to the head of the set sweep threshold request message queue |
-| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT` | `3` | Pointer to the tail of the set sweep threshold request message queue |
-| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET` | `4` | The start storage slot of the in-state set sweep threshold request message queue |
-| `MAX_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `16` | Maximum number of set sweep threshold requests that can be dequeued into a block |
-| `TARGET_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK` | `2` | |
-| `MIN_SET_SWEEP_THRESHOLD_REQUEST_FEE` | `1` | |
-| `SET_SWEEP_THRESHOLD_REQUEST_FEE_UPDATE_FRACTION` | `17` | |
-| `EXCESS_INHIBITOR` | `2**256-1` | Excess value used to compute the fee before the first system call |
+| Name                                                  | Value                                        | Comment                                                                              |
+| ----------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `SET_SWEEP_THRESHOLD_REQUEST_TYPE`                    | `0x03`                                       | The [EIP-7685](./eip-7685.md) type prefix for set sweep threshold request            |
+| `SET_SWEEP_THRESHOLD_REQUEST_PREDEPLOY_ADDRESS`       | `TBD`                                        | Where to call and store relevant details about set sweep threshold request mechanism |
+| `SYSTEM_ADDRESS`                                      | `0xfffffffffffffffffffffffffffffffffffffffe` | Address used to invoke system operation on contract                                  |
+| `EXCESS_SET_SWEEP_THRESHOLD_REQUESTS_STORAGE_SLOT`    | `0`                                          |                                                                                      |
+| `SET_SWEEP_THRESHOLD_REQUEST_COUNT_STORAGE_SLOT`      | `1`                                          |                                                                                      |
+| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_HEAD_STORAGE_SLOT` | `2`                                          | Pointer to the head of the set sweep threshold request message queue                 |
+| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_TAIL_STORAGE_SLOT` | `3`                                          | Pointer to the tail of the set sweep threshold request message queue                 |
+| `SET_SWEEP_THRESHOLD_REQUEST_QUEUE_STORAGE_OFFSET`    | `4`                                          | The start storage slot of the in-state set sweep threshold request message queue     |
+| `MAX_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK`          | `16`                                         | Maximum number of set sweep threshold requests that can be dequeued into a block     |
+| `TARGET_SET_SWEEP_THRESHOLD_REQUESTS_PER_BLOCK`       | `2`                                          |                                                                                      |
+| `MIN_SET_SWEEP_THRESHOLD_REQUEST_FEE`                 | `1`                                          |                                                                                      |
+| `SET_SWEEP_THRESHOLD_REQUEST_FEE_UPDATE_FRACTION`     | `17`                                         |                                                                                      |
+| `EXCESS_INHIBITOR`                                    | `2**256-1`                                   | Excess value used to compute the fee before the first system call                    |
 
 #### Consensus layer
 
-| Name | Value |
-| - | - |
-| `SWEEP_THRESHOLD_QUOTIENT` | `Gwei(1 * 10**9)` (1 ETH) |
+| Name                       | Value                                               |
+| -------------------------- | --------------------------------------------------- |
+| `SWEEP_THRESHOLD_QUOTIENT` | `Gwei(1 * 10**9)` (1 ETH)                           |
+| `MIN_SWEEP_THRESHOLD`      | `MIN_ACTIVATION_BALANCE + Gwei(1 * 10**9)` (33 ETH) |
 
 ### Execution layer
 
@@ -616,6 +617,9 @@ This design decision is made to prevent usage of the custom sweep threshold mech
 
 ### Immediate requests processing instead of queuing on consensus layer
 Unlike partial withdrawal requests, which are queued on the consensus layer, set sweep threshold requests are processed immediately upon being dequeued from the execution layer contract. This design choice simplifies the implementation and reduces the complexity of managing a separate queue on the consensus layer.
+
+### `MIN_SWEEP_THRESHOLD` of 33 ETH
+To ensure that validators do not set sweep threshold equalt to `MIN_ACTIVATION_BALANCE`, we introduce a minimum sweep threshold of `MIN_ACTIVATION_BALANCE + 1 ETH` (33 ETH). This ensures that people will opt-in to compounding withdrawal credentials only if they really want to accumulate rewards on the validator balance.
 
 ## Backwards Compatibility
 
