@@ -618,7 +618,7 @@ This design decision is made to prevent usage of the custom sweep threshold mech
 Unlike partial withdrawal requests, which are queued on the consensus layer, set sweep threshold requests are processed immediately upon being dequeued from the execution layer contract. This design choice simplifies the implementation and reduces the complexity of managing a separate queue on the consensus layer.
 
 ### `MIN_SWEEP_THRESHOLD` of 33 ETH
-To ensure that validators do not set sweep threshold equalt to `MIN_ACTIVATION_BALANCE`, we introduce a minimum sweep threshold of `MIN_ACTIVATION_BALANCE + 1 ETH` (33 ETH). This ensures that people will opt-in to compounding withdrawal credentials only if they really want to accumulate rewards on the validator balance.
+To ensure that validators do not set sweep threshold equal to `MIN_ACTIVATION_BALANCE`, we introduce a minimum sweep threshold of `MIN_ACTIVATION_BALANCE + 1 ` ETH (33 ETH). This ensures that people will opt-in to compounding withdrawal credentials only if they really want to accumulate rewards on the validator balance.
 
 ## Backwards Compatibility
 
