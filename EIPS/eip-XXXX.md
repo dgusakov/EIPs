@@ -50,7 +50,6 @@ The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "S
 
 | Name                       | Value                                               |
 | -------------------------- | --------------------------------------------------- |
-| `SWEEP_THRESHOLD_QUOTIENT` | `Gwei(1 * 10**9)` (1 ETH)                           |
 | `MIN_SWEEP_THRESHOLD`      | `MIN_ACTIVATION_BALANCE + Gwei(1 * 10**9)` (33 ETH) |
 
 ### Execution layer
