@@ -1,5 +1,5 @@
 ---
-title: Custom sweep threshold for for validators using compounding withdrawal credentials (`0x02, 0x03`)
+title: Custom sweep threshold for validators using compounding withdrawal credentials (`0x02, 0x03`)
 description: Allow setting custom balance thresholds for sweep validator withdrawals for validators using compounding withdrawal credentials (`0x02, 0x03`).
 author: Dmitry Gusakov (@dgusakov), Dmitry Chernukhin (@madlabman) and Greg Koumoutsos (@gkoumout)
 discussions-to: <URL>
@@ -7,7 +7,7 @@ status: Draft
 type: Standards Track
 category: Core
 created: 2025-11-25
-requires: 7251, 7685
+requires: 7251, 7685, 7732
 ---
 
 ## Abstract
